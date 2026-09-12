@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any, Callable, Dict, List, Tuple
 from src.redis import Redis
 Validator = Callable[[str], bool]
 Handler = Callable[..., Any]
@@ -47,28 +47,19 @@ def validate_int(value: str) -> bool:
     except ValueError:
         raise ValueError("value must be an integer")
 
-
-# =========================
-# Parsed command
-# =========================
-
-@dataclass
-class ParsedCommand:
-    command: tuple[str, ...]
-    pos: dict[str, Any]
-
 class Dispatcher:
     def __init__(self, redis:Redis):
         self.redis = redis
 
-    def dispatch(self, cmd:list[str], sep:int):
+    def dispatch(self, cmd:List[str], sep:int):
         handler_name = "_".join(token.lower() for token in cmd[:sep]) + "_"
         handler = getattr(self.redis,handler_name,None)
         if handler is None:
             raise RuntimeError(f"handler not implemented: {handler_name}")
+        self.redis.trim_ttl()
         return handler(*cmd[sep:])
 
-COMMANDS: dict[tuple[str,...], dict[str, Validator]] = {
+COMMANDS: Dict[Tuple[str,...], Dict[str, Validator]] = {
     ("SET",): {
             "key": validate_string,
             "value": validate_string,
@@ -107,13 +98,13 @@ COMMANDS: dict[tuple[str,...], dict[str, Validator]] = {
     ("TTL",): {
             "key": validate_string,
     },
-    ("QUIT",): 
+    ("QUIT",):
     {
     },
-    ("EXIT",): 
+    ("EXIT",):
     {
     },
-        ("VISUALIZE",): 
+        ("VISUALIZE",):
     {
     }
 }

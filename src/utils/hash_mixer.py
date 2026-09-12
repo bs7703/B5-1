@@ -1,8 +1,8 @@
 from src.utils.hash_utils import rotl_64, rotr_64, MASK64
-from typing import Callable
+from typing import Callable, List
 mix_policy = Callable[[int], int]
 
-def build_mixer(policy:list[mix_policy])->mix_policy:
+def build_mixer(policy:List[mix_policy])->mix_policy:
     def mixer(h: int) -> int:
         for fn in policy:
             h = fn(h)

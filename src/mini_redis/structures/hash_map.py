@@ -1,7 +1,7 @@
 from src.mini_redis.structures.node import HashNode
 from src.type_defs import T
 from src.utils.hash_func import HashFunction
-from typing import Generic
+from typing import Generic, List, Optional, Tuple, Iterator
 
 BASIC_BUCKET_SIZE = 64
 BUCKET_MAX_SIZE = 1024 * 128
@@ -18,7 +18,7 @@ class HashMap(Generic[T]):
         self._capacity = BASIC_BUCKET_SIZE
 
         # 각 index는 singly linked chain의 head를 보관
-        self._buckets: list[HashNode[T, str] | None] = [None] * self._capacity
+        self._buckets: List[Optional[HashNode[T, str]]] = [None] * self._capacity
 
         # 실제 저장된 node 수
         self._size:int = 0
@@ -26,7 +26,7 @@ class HashMap(Generic[T]):
     def size(self):
         return self._size
 
-    def _renode(self, node: HashNode[T, str] | None) -> tuple[HashNode[T, str] | None, HashNode[T, str] | None]:
+    def _renode(self, node: Optional[HashNode[T, str]]) -> Tuple[Optional[HashNode[T, str]], Optional[HashNode[T, str]]]:
         # resize 시 기존 한 bucket chain을 low/high 두 chain으로 분리
         low_head = low_tail = None
         high_head = high_tail = None
@@ -61,7 +61,7 @@ class HashMap(Generic[T]):
 
     def _resize(self):
         # 현재 capacity의 2배 크기로 새 bucket 배열 생성
-        new_buckets: list[HashNode[T, str] | None] = [None] * (self._capacity * 2)
+        new_buckets: List[Optional[HashNode[T, str]]] = [None] * (self._capacity * 2)
 
         for i in range(self._capacity):
             if (self._buckets[i]):
@@ -78,8 +78,8 @@ class HashMap(Generic[T]):
         self._buckets = new_buckets
 
     # bucket chain에서 key를 찾고, 삭제를 위해 prev도 함께 반환
-    def _find(self, start_node:HashNode[T,str] | None, key:str, h:int)->tuple[HashNode[T,str] | None, HashNode[T,str] | None]:
-        prev: HashNode[T, str] | None = None
+    def _find(self, start_node:Optional[HashNode[T,str]], key:str, h:int)->Tuple[Optional[HashNode[T,str]], Optional[HashNode[T,str]]]:
+        prev: Optional[HashNode[T, str]] = None
         node = start_node
 
         while node is not None:
@@ -92,7 +92,7 @@ class HashMap(Generic[T]):
 
         return None, None
 
-    def get(self, key:str)->T | None:
+    def get(self, key:str)->Optional[T]:
         h = self.hash_func(key.encode("utf-8"))
         idx = h % self._capacity
         start_node = self._buckets[idx]
@@ -127,14 +127,14 @@ class HashMap(Generic[T]):
         # head insertion: O(1)
         n.next = self._buckets[idx]
         self._buckets[idx] = n
-        self._size += 1        
+        self._size += 1
 
         # load factor 초과 시 먼저 resize
         if (self._size / self._capacity) > (self._load_factor):
             self._resize()
         return True
 
-    def remove(self, key:str)->T | None:
+    def remove(self, key:str)->Optional[T]:
         h = self.hash_func(key.encode("utf-8"))
         idx = h % self._capacity
         start_node = self._buckets[idx]
@@ -154,3 +154,13 @@ class HashMap(Generic[T]):
         self._size -= 1
 
         return data
+
+    def __iter__(self) -> Iterator[str]:
+        for bucket in self._buckets:
+            node = bucket
+            while node is not None:
+                yield node.key
+                node = node.next
+
+    def keys(self) -> List[str]:
+        return list(self)

@@ -1,12 +1,12 @@
 from src.type_defs import T
-from typing import Generic, Callable, Literal
+from typing import Generic, Callable, Literal, List, Optional
 
 COMPARATOR = Callable[[T, T], int]
 HeapMode = Literal["MIN", "MAX"]
 
 class Heap(Generic[T]):
     def __init__(self, mode:HeapMode, comp:COMPARATOR[T]) -> None:
-        self._data:list[T] = list[T]()
+        self._data:List[T] = []
         self.comp:COMPARATOR[T] = comp
         self._mode:str = mode
     def insert(self, value:T):
@@ -20,11 +20,8 @@ class Heap(Generic[T]):
         for index in range(len(self._data) // 2 - 1, -1, -1):
             self._shift_down(index)
     def _compare(self, a: T, b: T) -> int:
-        result = self.comp(a, b)
-        if self._mode == "MAX":
-            return result
-        return -result
-    def peek(self) -> T | None:
+        return self.comp(a,b) if self._mode == "MIN" else -self.comp(a, b)
+    def peek(self) -> Optional[T]:
         return self._data[0] if self._data else None
     def pop(self) -> T:
         if not self._data:
@@ -37,10 +34,10 @@ class Heap(Generic[T]):
         return result
     def _parent(self, index:int)->int:
         return (index - 1) // 2
-    def _left(self, index: int) -> int | None:
+    def _left(self, index: int) -> Optional[int]:
         child = index * 2 + 1
         return child if child < len(self._data) else None
-    def _right(self, index: int) -> int | None:
+    def _right(self, index: int) -> Optional[int]:
         child = index * 2 + 2
         return child if child < len(self._data) else None
     def _shift_up(self, index:int):

@@ -1,6 +1,7 @@
+from typing import List, Optional
 from src.mini_redis.commands.dispatcher import COMMANDS
 
-def parse_commands(lines: list[str] | None) -> int:
+def parse_commands(lines: Optional[List[str]]) -> int:
     if not lines:
         raise ValueError("Input Empty Error")
 
@@ -15,7 +16,7 @@ def parse_commands(lines: list[str] | None) -> int:
         return len(cmd)
     raise ValueError("Command Is Not Valid")
 """
-test_commands: list[list[str]] = [
+test_commands: List[List[str]] = [
     # 기본 key/value
     ["SET", "name", "alice", "DD"],
     ["SET", "age", "30"],

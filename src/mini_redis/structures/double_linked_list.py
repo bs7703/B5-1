@@ -8,7 +8,7 @@ Design:
 - Node ownership validation is intentionally omitted.
 """
 from re import L
-from typing import Generic, Iterator
+from typing import Generic, Iterator, Optional
 from src.mini_redis.structures.node import DoubleLinkedListNode
 from src.type_defs import T
 
@@ -33,8 +33,8 @@ class DoubleLinkedList(Generic[T]):
     __slots__ = ("head", "tail", "_size")
 
     def __init__(self) -> None:
-        self.head: DoubleLinkedListNode[T] | None = None
-        self.tail: DoubleLinkedListNode[T] | None = None
+        self.head: Optional[DoubleLinkedListNode[T]] = None
+        self.tail: Optional[DoubleLinkedListNode[T]] = None
         self._size: int = 0
 
     def size(self) -> int:
@@ -118,7 +118,7 @@ class DoubleLinkedList(Generic[T]):
         self._size += 1
         return node
 
-    def remove_front(self) -> T | None:
+    def remove_front(self) -> Optional[T]:
         if self.head is None:
             return None
 
@@ -128,7 +128,7 @@ class DoubleLinkedList(Generic[T]):
 
         return node.data
 
-    def remove_back(self) -> T | None:
+    def remove_back(self) -> Optional[T]:
         if self.tail is None:
             return None
 
