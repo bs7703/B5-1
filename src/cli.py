@@ -1,4 +1,3 @@
-import shlex
 import sys
 
 from src.mini_redis.commands.dispatcher import Dispatcher
@@ -13,8 +12,8 @@ def cli() -> None:
 
     while True:
         try:
-            line = input("mini_redis>").strip()
-            tokens = shlex.split(line)
+            line = input("mini-redis>").strip()
+            tokens = line.split()
             parsed = parse_command(tokens)
             reply = dispatcher.dispatch(parsed)
             print(format_reply(reply))
