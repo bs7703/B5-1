@@ -1,25 +1,24 @@
+import shlex
 import sys
 
 from src.mini_redis.commands.dispatcher import Dispatcher
-from src.mini_redis.commands.parse import parse_commands
+from src.mini_redis.commands.parse import parse_command
+from src.mini_redis.error import CLIExit, RedisCommandError
+from src.mini_redis.formatter import format_error, format_reply
 from src.redis import Redis
-from src.mini_redis.error import CLIExit
 
 
-def cli():
-    mini_redis = Dispatcher(Redis())
+def cli() -> None:
+    dispatcher = Dispatcher(Redis())
+
     while True:
         try:
-            str = input().strip()
-            cmd = str.split()
-            sep = parse_commands(cmd)
-            res = mini_redis.dispatch(cmd, sep)
-            print(res)
+            line = input("mini_redis>").strip()
+            tokens = shlex.split(line)
+            parsed = parse_command(tokens)
+            reply = dispatcher.dispatch(parsed)
+            print(format_reply(reply))
         except CLIExit:
-            sys.exit(1)
-        except ValueError as v:
-            print(v)
-        except IndexError as e:
-            print(e)
-        except RuntimeError as r:
-            print(r)
+            sys.exit(0)
+        except RedisCommandError as error:
+            print(format_error(error))

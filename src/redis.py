@@ -1,13 +1,13 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List
 import time
 from src.mini_redis.structures.heap import Heap
 from src.mini_redis.structures.double_linked_list import DoubleLinkedList
 from src.mini_redis.structures.hash_map import HashMap
 from src.mini_redis.structures.node import DoubleLinkedListNode
 from src.utils.hash_func import hashfunc
-from src.mini_redis.error import CLIExit
-from src.visualizer import Visualizer
+from src.mini_redis.error import CLIExit, out_of_memory
+#from src.visualizer import Visualizer
 
 BASIC_MAX_MEMORY = 100 #(64MB)
 TO_NANO_SEC = 1_000_000_000
@@ -35,6 +35,7 @@ class Redis():
         self._stored = 0
     def _now(self) -> int:
         return time.monotonic_ns() - self._start_time
+    """
     def visualize_(self)->str:
         hashmap = Visualizer.hashmap(self._hashmap)
         heap = Visualizer.heap(self._ttl)
@@ -51,6 +52,7 @@ class Redis():
             "================ LRU =====================\n"
             f"{lru}\n"
         )
+    """
     def del_(self, key:str)->int:
         removed = self._hashmap.remove(key)
         if (removed):
@@ -89,7 +91,7 @@ class Redis():
         return len(key.encode("utf-8")) + len(value.encode("utf-8"))
     def set_(self, key: str, value: str):
         if self._max_memory > 0 and self._memory_size(key, value) > self._max_memory:
-            raise ValueError("OOM")
+            raise out_of_memory()
         entry = self._hashmap.get(key)
         if entry is not None:
             old_size = len(entry.value.encode("utf-8"))
@@ -111,21 +113,20 @@ class Redis():
             self._evict()
 
         return "OK"
-    def get_(self, key:str)->str:
+    def get_(self, key: str) -> Optional[str]:
         entry = self._hashmap.get(key)
-        if entry is not None:
-            if (entry.expire_at is not None) and (entry.expire_at <= self._now()):
-                self.del_(key)
-                raise ValueError("(nil)")
-            self._lru.move_to_front(entry.lru_node)
-            return entry.value
-        else:
-            raise ValueError("(nil)")
-    def keys_(self)->str:
-        mystr:str = ""
-        for a in self._lru:
-            mystr += a.data + "\n"
-        return mystr if mystr != "" else "(empty array)"
+
+        if entry is None:
+            return None
+
+        if entry.expire_at is not None and entry.expire_at <= self._now():
+            self.del_(key)
+            return None
+
+        self._lru.move_to_front(entry.lru_node)
+        return entry.value
+    def keys_(self) -> List[str]:
+        return [node.data for node in self._lru]
     def exists_(self, key:str)->int:
         return 1 if self._hashmap.contains(key) is True else 0
     def config_set_maxmemory_(self, maxm:str)->str:
